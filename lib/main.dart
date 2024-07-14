@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() {
   runApp(MaterialApp(
     home: NinjaCard(),
@@ -19,6 +21,24 @@ class _NinjaCardState extends State<NinjaCard> {
   String _convertedValue = '';
   List<String> _history = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _history = prefs.getStringList('history') ?? [];
+    });
+  }
+
+  Future<void> _saveHistory() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('history', _history);
+  }
+
   void _convertTemperature() {
     double input = double.tryParse(_controller.text) ?? 0.0;
     double result;
@@ -26,14 +46,16 @@ class _NinjaCardState extends State<NinjaCard> {
     if (_selectedUnit == '°C - °F') {
       result = input * 9 / 5 + 32;
       setState(() {
-        _convertedValue = '$input °C = ${result.toStringAsFixed(2)} °F';
-        _history.add(_convertedValue);
+        _convertedValue = '$input °C = ${result.toStringAsFixed(1)} °F';
+        _history.insert(0, _convertedValue);
+        _saveHistory();
       });
     } else if (_selectedUnit == '°F - °C') {
       result = (input - 32) * 5 / 9;
       setState(() {
-        _convertedValue = '$input °F = ${result.toStringAsFixed(2)} °C';
-        _history.add(_convertedValue);
+        _convertedValue = '$input °F = ${result.toStringAsFixed(1)} °C';
+        _history.insert(0, _convertedValue);
+        _saveHistory();
       });
     }
   }
@@ -59,59 +81,94 @@ class _NinjaCardState extends State<NinjaCard> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.grey[850],
+        backgroundColor: Colors.blue,
         elevation: 0.0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white,),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+          ),
           onPressed: () {
             Navigator.of(context).popUntil((route) => route.isFirst);
           },
         ),
       ),
-      body: Container(
-        color: Colors.white,
-        padding: EdgeInsets.fromLTRB(30.0, 40.0, 30.0, 40.0),
-        child: Form(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: _selectedUnit == '°C - °F' ? "°C" : "°F",
-                  labelText: "Enter Temperature in (°C or °F)",
-                  suffixIcon: DropdownButton<String>(
-                    value: _selectedUnit,
-                    items: _units.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (String? value) {
-                      setState(() {
-                        _selectedUnit = value!;
-                      });
-                    },
-                    underline: Container(),
+      body: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Container(
+            color: Colors.white,
+            padding: EdgeInsets.symmetric(
+              horizontal: constraints.maxWidth * 0.1,
+              vertical: constraints.maxHeight * 0.05,
+            ),
+            child: Form(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextFormField(
+                    controller: _controller,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: _selectedUnit == '°C - °F' ? "°C" : "°F",
+                      labelText: "Enter Temperature in (°C or °F)",
+                      suffixIcon: DropdownButton<String>(
+                        value: _selectedUnit,
+                        items: _units.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? value) {
+                          setState(() {
+                            _selectedUnit = value!;
+                          });
+                        },
+                        underline: Container(),
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _convertTemperature,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(Colors.lightBlueAccent),
+                      padding: MaterialStateProperty.all<EdgeInsets>(
+                        EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      ),
+                      textStyle: MaterialStateProperty.all<TextStyle>(
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    child: Text('Convert', style: TextStyle(color: Colors.white),),
+                  ),
+
+                  SizedBox(height: 20),
+                  Container(
+                    color: Color.fromARGB(47, 12, 159, 227),
+                    padding: EdgeInsets.all(50),
+                    child: Column(
+                      children: [
+                        Text('Results', style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline),),
+                        SizedBox(height: 20),
+                        Text(
+                          _convertedValue,
+                          style: TextStyle(fontSize: 20,),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _convertTemperature,
-                child: Text('Convert', style: TextStyle(),),
-              ),
-              SizedBox(height: 20),
-              Text(
-                _convertedValue,
-                style: TextStyle(fontSize: 20),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -125,7 +182,8 @@ class _NinjaCardState extends State<NinjaCard> {
           unselectedItemColor: Colors.grey,
           items: [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.history), label: 'History'),
           ],
           onTap: (index) {
             if (index == 1) {
@@ -147,23 +205,55 @@ class HistoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Conversion History', style: TextStyle(color: Colors.white),),
-        backgroundColor: Colors.grey[850],
+        title: Text(
+          'Conversion History',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.blue,
         elevation: 0.0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white,),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+          ),
           onPressed: () {
             Navigator.of(context).popUntil((route) => route.isFirst);
           },
         ),
       ),
-      body: ListView.builder(
-        itemCount: history.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(history[index]),
-          );
-        },
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(15.0, 20.0, 15.0, 20.0), // Left, top, right, bottom margins
+        child: history.isEmpty
+            ? Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+                ),
+              )
+            : ListView.builder(
+                itemCount: history.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(vertical: 5.0),
+                    padding: EdgeInsets.all(10.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4.0,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      history[index],
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
