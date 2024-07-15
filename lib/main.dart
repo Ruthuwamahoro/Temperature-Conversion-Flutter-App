@@ -3,22 +3,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MaterialApp(
-    home: NinjaCard(),
+    home: TemperatureConversion(),
   ));
 }
 
-class NinjaCard extends StatefulWidget {
-  const NinjaCard({super.key});
+class TemperatureConversion extends StatefulWidget {
+  const TemperatureConversion({super.key});
 
   @override
-  State<NinjaCard> createState() => _NinjaCardState();
+  State<TemperatureConversion> createState() => _TemperatureConversionState();
 }
 
-class _NinjaCardState extends State<NinjaCard> {
-  String _selectedUnit = '°C - °F';
+class _TemperatureConversionState extends State<TemperatureConversion> {
+  String _unitType = '°C - °F';
   final List<String> _units = ['°C - °F', '°F - °C'];
   final TextEditingController _controller = TextEditingController();
-  String _convertedValue = '';
+  String _resultValue = '';
   List<String> _history = [];
 
   @override
@@ -43,18 +43,18 @@ class _NinjaCardState extends State<NinjaCard> {
     double input = double.tryParse(_controller.text) ?? 0.0;
     double result;
 
-    if (_selectedUnit == '°C - °F') {
+    if (_unitType == '°C - °F') {
       result = input * 9 / 5 + 32;
       setState(() {
-        _convertedValue = '$input °C = ${result.toStringAsFixed(1)} °F';
-        _history.insert(0, _convertedValue);
+        _resultValue = '$input °C = ${result.toStringAsFixed(2)} °F';
+        _history.insert(0, _resultValue);
         _saveHistory();
       });
-    } else if (_selectedUnit == '°F - °C') {
+    } else if (_unitType == '°F - °C') {
       result = (input - 32) * 5 / 9;
       setState(() {
-        _convertedValue = '$input °F = ${result.toStringAsFixed(1)} °C';
-        _history.insert(0, _convertedValue);
+        _resultValue = '$input °F = ${result.toStringAsFixed(2)} °C';
+        _history.insert(0, _resultValue);
         _saveHistory();
       });
     }
@@ -95,78 +95,150 @@ class _NinjaCardState extends State<NinjaCard> {
       ),
       body: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          return Container(
-            color: Colors.white,
-            padding: EdgeInsets.symmetric(
-              horizontal: constraints.maxWidth * 0.1,
-              vertical: constraints.maxHeight * 0.05,
-            ),
-            child: Form(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextFormField(
-                    controller: _controller,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: _selectedUnit == '°C - °F' ? "°C" : "°F",
-                      labelText: "Enter Temperature in (°C or °F)",
-                      suffixIcon: DropdownButton<String>(
-                        value: _selectedUnit,
-                        items: _units.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (String? value) {
-                          setState(() {
-                            _selectedUnit = value!;
-                          });
-                        },
-                        underline: Container(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _convertTemperature,
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(Colors.lightBlueAccent),
-                      padding: MaterialStateProperty.all<EdgeInsets>(
-                        EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                      ),
-                      textStyle: MaterialStateProperty.all<TextStyle>(
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+          return OrientationBuilder(
+            builder: (context, orientation) {
+              return Container(
+                color: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: constraints.maxWidth * 0.1,
+                  vertical: constraints.maxHeight * 0.05,
+                ),
+                child: Form(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextFormField(
+                        controller: _controller,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: _unitType == '°C - °F' ? "°C" : "°F",
+                          labelText: "Enter Temperature in (°C or °F)",
+                          suffixIcon: DropdownButton<String>(
+                            value: _unitType,
+                            items: _units.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? value) {
+                              setState(() {
+                                _unitType = value!;
+                              });
+                            },
+                            underline: Container(),
+                          ),
                         ),
                       ),
-                    ),
-                    child: Text('Convert', style: TextStyle(color: Colors.white),),
-                  ),
-
-                  SizedBox(height: 20),
-                  Container(
-                    color: Color.fromARGB(47, 12, 159, 227),
-                    padding: EdgeInsets.all(50),
-                    child: Column(
-                      children: [
-                        Text('Results', style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline),),
+                      SizedBox(height: 20),
+                      if (orientation == Orientation.portrait) ...[
+                        ElevatedButton(
+                          onPressed: _convertTemperature,
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                                Colors.lightBlueAccent),
+                            padding: MaterialStateProperty.all<EdgeInsets>(
+                              EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                            ),
+                            textStyle: MaterialStateProperty.all<TextStyle>(
+                              TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            shape: MaterialStateProperty.all<
+                                RoundedRectangleBorder>(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            'Convert',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
                         SizedBox(height: 20),
-                        Text(
-                          _convertedValue,
-                          style: TextStyle(fontSize: 20,),
+                        Container(
+                          color: Color.fromARGB(47, 12, 159, 227),
+                          padding: EdgeInsets.fromLTRB(40, 10, 40, 10),
+                          child: Column(
+                            children: [
+                              Text(
+                                'Results',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.underline),
+                              ),
+                              SizedBox(height: 20),
+                              Text(
+                                _resultValue,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
+                      ] else ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: _convertTemperature,
+                              style: ButtonStyle(
+                                backgroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.lightBlueAccent),
+                                padding: MaterialStateProperty.all<EdgeInsets>(
+                                  EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 15),
+                                ),
+                                textStyle: MaterialStateProperty.all<TextStyle>(
+                                  TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                shape: MaterialStateProperty.all<
+                                    RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Convert',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            Container(
+                              color: Color.fromARGB(47, 12, 159, 227),
+                              padding: EdgeInsets.fromLTRB(40, 10, 40, 10),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Results',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.underline),
+                                  ),
+                                  SizedBox(height: 20),
+                                  Text(
+                                    _resultValue,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ]
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -182,8 +254,7 @@ class _NinjaCardState extends State<NinjaCard> {
           unselectedItemColor: Colors.grey,
           items: [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.history), label: 'History'),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
           ],
           onTap: (index) {
             if (index == 1) {
@@ -206,7 +277,7 @@ class HistoryPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Conversion History',
+          'Temperature Conversion History',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.blue,
@@ -222,7 +293,7 @@ class HistoryPage extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.fromLTRB(15.0, 20.0, 15.0, 20.0), // Left, top, right, bottom margins
+        padding: EdgeInsets.fromLTRB(15.0, 20.0, 15.0, 20.0),
         child: history.isEmpty
             ? Center(
                 child: Text(
