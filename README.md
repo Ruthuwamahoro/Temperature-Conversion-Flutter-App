@@ -10,7 +10,7 @@ This app shows how we can convert temperature into different degrees like from c
 
 -Please find here link to the loom video that show show app work
 
-- [Temperature conversion app video](https://docs.google.com/document/d/1-KuJChcMKc8THlUbaLihpoGPcqJ8DBgzSNRqdgRdy6U/edit?usp=sharing)
+- [Temperature conversion app video](https://www.loom.com/share/5472791fa8be47eaba16d7641ba1cdcb)
 
 
 
