@@ -64,7 +64,7 @@ class _TemperatureConversionState extends State<TemperatureConversion> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => HistoryPage(history: _history),
+        builder: (context) => TemperatureConversionHistory(history: _history),
       ),
     );
   }
@@ -267,10 +267,10 @@ class _TemperatureConversionState extends State<TemperatureConversion> {
   }
 }
 
-class HistoryPage extends StatelessWidget {
+class TemperatureConversionHistory extends StatelessWidget {
   final List<String> history;
 
-  HistoryPage({required this.history});
+  TemperatureConversionHistory({required this.history});
 
   @override
   Widget build(BuildContext context) {
